@@ -1,0 +1,170 @@
+:root{
+  --bg:#EDF2F1; --surface:#FFFFFF; --ink:#142321; --muted:#5B6E6B; --line:#D5DFDD;
+  --brand:#0F4C4A; --brand-ink:#FFFFFF; --in:#0B7A4A; --out:#B4400E; --field:#F6F9F8;
+  --bar:#9DB9B5; --bar-sel:#0F4C4A;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0E1716; --surface:#16231F; --ink:#E6EFED; --muted:#93A9A5; --line:#27393A;
+    --brand:#0C3A38; --brand-ink:#F1FAF8; --in:#4FD39A; --out:#FF9A66; --field:#10201E;
+    --bar:#3B5A57; --bar-sel:#7FE0C0;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif;
+  font-size:16px; line-height:1.55;
+}
+.wrap{max-width:720px; margin:0 auto; padding:0 16px 56px}
+.num{font-variant-numeric:tabular-nums}
+button,input{font:inherit; color:inherit}
+:focus-visible{outline:3px solid #2BB59A; outline-offset:2px}
+
+/* ---------- header / month nav ---------- */
+.top{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:18px 0 14px}
+.top h1{font-size:18px; font-weight:600; margin:0}
+.monthnav{display:flex; align-items:center; gap:6px}
+.monthnav .label{min-width:128px; text-align:center; font-weight:600}
+.iconbtn{
+  width:40px; height:40px; border-radius:50%; border:1px solid var(--line);
+  background:var(--surface); cursor:pointer; font-size:20px; line-height:1;
+}
+.iconbtn:disabled{opacity:.35; cursor:not-allowed}
+
+/* ---------- hero balance ---------- */
+.hero{background:var(--brand); color:var(--brand-ink); border-radius:20px; padding:22px 22px 18px}
+.hero .cap{font-size:15px; opacity:.85}
+.hero .bal{font-size:clamp(40px,11vw,60px); font-weight:700; line-height:1.1; margin:2px 0 4px; letter-spacing:-.01em}
+.hero .bal.neg{color:#FFB48F}
+.hero .sub{font-size:14px; opacity:.8}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,.22)}
+.stats div span{display:block; font-size:13px; opacity:.75}
+.stats div b{font-size:17px; font-weight:600}
+
+/* ---------- panels ---------- */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; margin-top:14px}
+.panel h2{font-size:16px; font-weight:600; margin:0 0 12px}
+.row{display:flex; gap:10px; align-items:center}
+.row > label{flex:1}
+.field{display:block}
+.field span.t{display:block; font-size:14px; color:var(--muted); margin-bottom:4px}
+input[type=number],input[type=text],input[type=date]{
+  width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+  background:var(--field); min-height:46px;
+}
+input::placeholder{color:#94A5A2}
+.hint{font-size:13px; color:var(--muted); margin:6px 0 0}
+.divider{height:1px; background:var(--line); margin:16px 0}
+
+.exrow{display:grid; grid-template-columns:110px 1fr 40px; gap:8px; margin-bottom:8px; align-items:center}
+.exrow .x{width:40px; height:40px; border-radius:10px; border:1px solid var(--line); background:transparent; cursor:pointer; color:var(--muted); font-size:20px}
+.btn{
+  border:0; border-radius:12px; padding:12px 18px; font-weight:600; cursor:pointer; min-height:46px;
+}
+.btn.primary{background:var(--brand); color:var(--brand-ink); width:100%; margin-top:16px}
+.btn.ghost{background:transparent; border:1px dashed var(--line); color:var(--muted); width:100%}
+.btn.small{min-height:34px; padding:6px 12px; font-size:14px}
+.btn.line{background:transparent; border:1px solid var(--line)}
+
+/* ---------- month cards ---------- */
+.months{display:flex; gap:10px; overflow-x:auto; padding:2px 2px 10px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch}
+.mcard{
+  flex:0 0 156px; scroll-snap-align:start; text-align:left; cursor:pointer;
+  background:var(--field); border:1px solid var(--line); border-radius:14px; padding:12px 14px;
+}
+.mcard.sel{border-color:var(--brand); box-shadow:inset 0 0 0 1px var(--brand); background:var(--surface)}
+.mcard .mn{font-size:14px; color:var(--muted)}
+.mcard .mb{font-size:22px; font-weight:700; line-height:1.25; margin:2px 0 6px}
+.mcard .mb.neg{color:var(--out)}
+.mcard .ml{display:flex; justify-content:space-between; font-size:13px; color:var(--muted)}
+.mcard .ml b{font-weight:500}
+.mcard .ml .i{color:var(--in)} .mcard .ml .o{color:var(--out)}
+
+/* ---------- chart ---------- */
+.bars{display:flex; align-items:flex-end; gap:2px; height:92px}
+.bar{flex:1; background:var(--bar); border-radius:3px 3px 0 0; min-height:2px; border:0; padding:0; cursor:pointer}
+.bar.sel{background:var(--bar-sel)}
+.bar.empty{opacity:.35}
+.axis{display:flex; gap:2px; margin-top:4px}
+.axis span{flex:1; text-align:center; font-size:10px; color:var(--muted)}
+.avg{font-size:14px; color:var(--muted); margin:10px 0 0}
+
+/* ---------- statement ---------- */
+.day{border-top:1px solid var(--line); padding:14px 0 6px}
+.day:first-of-type{border-top:0}
+.dayhead{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap}
+.dayhead b{font-weight:600}
+.dayhead small{color:var(--muted); font-size:13px}
+.tx{display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; padding:8px 0}
+.tx .note{overflow-wrap:anywhere}
+.tx .note.none{color:var(--muted)}
+.tx .amt{font-weight:600; text-align:right}
+.tx .amt.in{color:var(--in)}
+.tx .amt.out{color:var(--out)}
+.tx .acts{display:flex; gap:4px}
+.tx .acts button{border:0; background:transparent; color:var(--muted); cursor:pointer; padding:6px 8px; border-radius:8px; font-size:13px}
+.tx .acts button:hover{background:var(--field)}
+.tx.sal .note{font-weight:500}
+.txedit{display:grid; grid-template-columns:100px 1fr; gap:8px; padding:8px 0}
+.txedit .b{grid-column:1/-1; display:flex; gap:8px; justify-content:flex-end}
+.empty-state{color:var(--muted); text-align:center; padding:26px 8px}
+.sthead{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.panel h2.bigh{font-size:24px; font-weight:700; margin:0; letter-spacing:-.01em}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.seg button{border:0; background:transparent; padding:8px 14px; cursor:pointer; font-size:14px; min-height:38px}
+.seg button.on{background:var(--brand); color:var(--brand-ink); font-weight:600}
+.stamp{display:block; font-size:12px; color:var(--muted)}
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px}
+table.grid{border-collapse:collapse; width:100%; min-width:640px; font-size:14px}
+.grid th,.grid td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap}
+.grid td.note{white-space:normal; min-width:150px; overflow-wrap:anywhere}
+.grid td.note.none{color:var(--muted)}
+.grid th{background:var(--field); font-weight:600}
+.grid .r{text-align:right}
+.grid td.in{color:var(--in)} .grid td.out{color:var(--out)}
+.grid td.ts{color:var(--muted); font-size:13px}
+.grid tbody tr:last-child td{border-bottom:0}
+.grid tfoot td{font-weight:600; background:var(--field); border-top:1px solid var(--line); border-bottom:0}
+.grid .acts{display:flex; gap:2px}
+.grid .acts button{border:0; background:transparent; color:var(--muted); cursor:pointer; padding:4px 8px; border-radius:8px; font-size:13px}
+.grid .acts button:hover{background:var(--field)}
+.grid td.editcell{white-space:normal}
+.pager{display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:center; margin-top:14px}
+.pager button{min-width:38px; height:38px; padding:0 8px; border-radius:10px; border:1px solid var(--line); background:var(--surface); cursor:pointer}
+.pager button.on{background:var(--brand); color:var(--brand-ink); border-color:var(--brand); font-weight:600}
+.pager button:disabled{opacity:.35; cursor:not-allowed}
+.pager .gap{color:var(--muted); padding:0 2px}
+.pinfo{width:100%; text-align:center; font-size:13px; color:var(--muted)}
+
+.foot{margin-top:22px; font-size:14px; color:var(--muted)}
+.foot .btns{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+.toast{
+  position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px);
+  background:#142321; color:#fff; padding:10px 16px; border-radius:12px; font-size:14px;
+  opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+[hidden]{display:none !important}
+@media (max-width:420px){ .exrow{grid-template-columns:96px 1fr 40px} }
+
+/* ---------- account / login ---------- */
+.top{flex-wrap:wrap}
+.account{display:flex; align-items:center; gap:10px; min-width:0}
+#avatar{width:36px; height:36px; border-radius:50%; background:var(--line); flex:none}
+.who{display:flex; flex-direction:column; line-height:1.25; min-width:0}
+.who b{font-size:14px; font-weight:600}
+.who span{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.monthbar{justify-content:center; margin-bottom:12px}
+.login{background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:36px 22px; text-align:center; margin-top:24px}
+.login h2{font-size:22px; font-weight:700; margin:0 0 6px}
+.login p{color:var(--muted); margin:0 auto 22px; max-width:420px}
+.gbtn{display:inline-flex; align-items:center; gap:10px; background:#fff; color:#1f1f1f; border:1px solid #dadce0; border-radius:12px; padding:12px 20px; font-weight:600; cursor:pointer; min-height:48px}
+.gbtn:disabled{opacity:.5; cursor:not-allowed}
+.login .msg{color:var(--out); font-size:14px; margin-top:14px; min-height:1.2em}
+.login .setup{background:var(--field); border:1px dashed var(--line); border-radius:12px; padding:12px; margin:18px auto 0; font-size:14px; color:var(--ink)}
+.loading{text-align:center; color:var(--muted); padding:64px 0}
+@media (max-width:520px){ .who span{display:none} }
+
