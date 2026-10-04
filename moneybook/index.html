@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สมุดรายรับรายจ่าย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>สมุดรายรับรายจ่าย</h1>
+    <div class="account" id="account" hidden>
+      <img id="avatar" alt="" referrerpolicy="no-referrer" hidden>
+      <div class="who"><b id="uName"></b><span id="uEmail"></span></div>
+      <button class="btn small line" id="logout" type="button">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <div class="loading" id="loading">กำลังโหลด…</div>
+
+  <section class="login" id="login" hidden>
+    <h2>เข้าสู่ระบบเพื่อเริ่มใช้งาน</h2>
+    <p>ล็อกอินด้วยบัญชี Google ข้อมูลรายรับรายจ่ายจะถูกเก็บแยกตามบัญชี เห็นได้เฉพาะเจ้าของบัญชีนั้น</p>
+    <button class="gbtn" id="loginBtn" type="button"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>เข้าสู่ระบบด้วย Google</button>
+    <div class="msg" id="loginMsg" role="alert"></div>
+    <div class="setup" id="setupMsg" hidden>ยังไม่ได้ตั้งค่า Firebase — เปิดไฟล์ <b>js/firebase-config.js</b> แล้วใส่ค่าตามขั้นตอนใน README.md</div>
+  </section>
+
+  <main id="app" hidden>
+    <nav class="monthnav monthbar" aria-label="เลือกเดือน">
+      <button class="iconbtn" id="prev" aria-label="เดือนก่อนหน้า">‹</button>
+      <div class="label" id="monthLabel" aria-live="polite"></div>
+      <button class="iconbtn" id="next" aria-label="เดือนถัดไป">›</button>
+    </nav>
+
+    <!-- เงินคงเหลือรวม -->
+    <section class="hero" aria-label="เงินคงเหลือเดือนนี้">
+      <div class="cap" id="heroCap">เงินคงเหลือเดือนนี้</div>
+      <div class="bal num" id="balance">0</div>
+      <div class="sub" id="balanceSub"></div>
+      <div class="stats">
+        <div><span>รายได้ประจำเดือน</span><b class="num" id="stSal">0</b></div>
+        <div><span>รายรับอื่นๆ</span><b class="num" id="stIn">0</b></div>
+        <div><span>รายจ่ายรวม</span><b class="num" id="stOut">0</b></div>
+      </div>
+    </section>
+
+    <!-- สรุปแต่ละเดือน -->
+    <section class="panel" aria-label="สรุปแต่ละเดือน">
+      <h2>สรุปแต่ละเดือน</h2>
+      <div class="months" id="months"></div>
+      <p class="hint">เลื่อนดูได้ · แตะที่เดือนเพื่อเปิดดูรายการของเดือนนั้น · แต่ละเดือนเริ่มนับจาก 0 ไม่ยกยอดต่อ</p>
+    </section>
+
+    <!-- รายได้ประจำเดือน -->
+    <section class="panel">
+      <h2>รายได้ประจำเดือน</h2>
+      <label class="field">
+        <span class="t">เงินเดือน / รายได้หลักของเดือนนี้ (บาท)</span>
+        <input type="number" id="monthIncome" inputmode="decimal" min="0" step="0.01" placeholder="เช่น 12000">
+      </label>
+      <p class="hint">นับเป็นรายรับของวันที่ 1 ของเดือน · ใส่ครั้งเดียวต่อเดือน แก้ไขได้ตลอด</p>
+    </section>
+
+    <!-- บันทึกรายวัน -->
+    <section class="panel" aria-label="บันทึกรายวัน">
+      <h2>บันทึกประจำวัน</h2>
+      <label class="field">
+        <span class="t">วันที่</span>
+        <input type="date" id="date">
+      </label>
+      <p class="hint" id="dateTh"></p>
+
+      <div class="divider"></div>
+      <div class="row">
+        <label class="field" style="flex:0 0 110px">
+          <span class="t">รายรับ</span>
+          <input type="number" id="inAmt" inputmode="decimal" min="0" step="0.01" placeholder="0">
+        </label>
+        <label class="field">
+          <span class="t">รายละเอียด (ไม่ต้องใส่ก็ได้)</span>
+          <input type="text" id="inNote" placeholder="เช่น ได้เงินคืน, ขายของ">
+        </label>
+      </div>
+      <p class="hint">ถ้าไม่มีรายรับ เว้นว่างไว้ = ไม่บวกเพิ่ม</p>
+
+      <div class="divider"></div>
+      <span class="field"><span class="t">รายจ่าย (เพิ่มได้เรื่อยๆ)</span></span>
+      <div id="exRows"></div>
+      <button type="button" class="btn ghost" id="addRow">+ เพิ่มรายจ่าย</button>
+
+      <button type="button" class="btn primary" id="save">บันทึกของวันนี้</button>
+    </section>
+
+    <!-- กราฟรายจ่ายรายวัน -->
+    <section class="panel" aria-label="รายจ่ายรายวัน">
+      <h2>รายจ่ายแต่ละวัน</h2>
+      <div class="bars" id="bars"></div>
+      <div class="axis" id="axis"></div>
+      <p class="avg" id="avg"></p>
+    </section>
+
+    <!-- statement -->
+    <section class="panel" aria-label="รายการเดินบัญชี">
+      <div class="sthead">
+        <h2 class="bigh">รายการเดินบัญชี</h2>
+        <div class="seg" id="viewSeg" role="group" aria-label="รูปแบบการแสดงผล">
+          <button type="button" data-view="list">รายการ</button>
+          <button type="button" data-view="table">ตาราง (CSV)</button>
+        </div>
+      </div>
+      <div id="statement"></div>
+      <nav class="pager" id="pager" aria-label="เลือกหน้า"></nav>
+    </section>
+
+    <footer class="foot">
+      ข้อมูลซิงก์กับบัญชี Google ของคุณอัตโนมัติ · เปิดจากเครื่องไหนก็เห็นเหมือนกัน
+      <div class="btns">
+        <button class="btn small line" id="exportCsv">ส่งออกเป็น Excel (.csv)</button>
+        <button class="btn small line" id="export">สำรอง (.json)</button>
+        <button class="btn small line" id="importBtn">นำเข้าจาก .json</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+    </footer>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
