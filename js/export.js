@@ -4,7 +4,7 @@ import { ymOf, addMonth, monthTh, todayStr, pad } from './utils.js';
 import { compute, byTime } from './calc.js';
 
 const r2 = n => Math.round(n * 100) / 100;
-const HEAD = ['วันที่', 'เวลา', 'เงินเข้า', 'เงินออก', 'รายละเอียด', 'คงเหลือ'];
+const HEAD = ['วันที่', 'เวลา', 'เงินเข้า', 'เงินออก', 'รายละเอียด', 'คงเหลือ', 'ค่าใช้จ่ายรวมของวัน'];
 
 // สีประจำวัน (อาทิตย์ → เสาร์): bg = สีพื้น, fg = สีตัวอักษร (พื้นเข้มใช้ขาว พื้นอ่อนใช้เข้ม)
 const DAY_COLORS = [
@@ -42,7 +42,11 @@ function buildBlocks(db) {
         note: t.note || (t.type === 'in' ? 'รายรับ' : 'ไม่ระบุรายละเอียด'), bal: r2(bal),
       };
     });
-    blocks.push({title: monthTh(m), rows, total: ['รวม ' + monthTh(m), '', r2(c.inc), r2(c.exp), 'เงินคงเหลือเดือนนี้', r2(c.close)]});
+    // รวมรายจ่ายของแต่ละวัน แล้วใส่ที่แถวสุดท้ายของวันนั้น (คอลัมน์ G)
+    const daySum = {};
+    rows.forEach(r => { daySum[r.date] = r2((daySum[r.date] || 0) + (r.out || 0)); });
+    rows.forEach((r, i) => { r.dayTotal = (i === rows.length - 1 || rows[i + 1].date !== r.date) ? daySum[r.date] : ''; });
+    blocks.push({title: monthTh(m), rows, total: ['รวม ' + monthTh(m), '', r2(c.inc), r2(c.exp), 'เงินคงเหลือเดือนนี้', r2(c.close), '']});
   }
   return blocks;
 }
@@ -63,7 +67,7 @@ export function exportCsv(db) {
   const rows = [];
   buildBlocks(db).forEach(b => {
     rows.push([b.title], HEAD);
-    b.rows.forEach(r => rows.push([r.date, r.time, r.inn, r.out, r.note, r.bal]));
+    b.rows.forEach(r => rows.push([r.date, r.time, r.inn, r.out, r.note, r.bal, r.dayTotal]));
     rows.push(b.total, []);
   });
   const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');   // BOM ให้ Excel อ่านภาษาไทยถูก
@@ -87,7 +91,7 @@ export async function exportXlsx(db) {
   const ExcelJS = await loadExcelJS();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('รายรับรายจ่าย');
-  ws.columns = [14, 11, 13, 13, 36, 13, 13].map(width => ({width}));
+  ws.columns = [14, 11, 13, 13, 36, 13, 20].map(width => ({width}));
   const line = {style: 'thin', color: {argb: 'FFBDBDBD'}};
   const paintCell = (cell, bg, fg, bold) => {
     cell.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: 'FF' + bg}};
@@ -106,11 +110,11 @@ export async function exportXlsx(db) {
     paint(ws.addRow(HEAD), 'D9D9D9', '212121', true);
     b.rows.forEach(r => {
       const [y, m, d] = r.date.split('-').map(Number);
-      const row = ws.addRow([new Date(Date.UTC(y, m - 1, d)), r.time, r.inn || null, r.out || null, r.note, r.bal]);
+      const row = ws.addRow([new Date(Date.UTC(y, m - 1, d)), r.time, r.inn || null, r.out || null, r.note, r.bal, r.dayTotal === '' ? null : r.dayTotal]);
       const dc = DAY_COLORS[new Date(y, m - 1, d).getDay()];
       paint(row, dc.bg, dc.fg, false);
       row.getCell(1).numFmt = 'dd/mm/yyyy';
-      [3, 4, 6].forEach(i => { row.getCell(i).numFmt = '#,##0.00'; });
+      [3, 4, 6, 7].forEach(i => { row.getCell(i).numFmt = '#,##0.00'; });
       [1, 2].forEach(i => { row.getCell(i).alignment = {horizontal: 'center'}; });
     });
     const t = ws.addRow(b.total.map(v => v === '' ? null : v));
