@@ -4,8 +4,8 @@ import { $, pad, ymOf, esc, fmt, todayStr, addMonth, daysIn, monthTh, dateTh, da
 import { compute as calc, byTime } from './calc.js';
 import { configured } from './firebase.js';
 import { watchAuth, login, logout } from './auth.js';
-import { state as db, onChange, onSyncError, startSync, stopSync, addTx, updateTx, deleteTx, setMonthIncome, importData } from './store.js';
-import { exportCsv, exportJson, readBackup } from './export.js';
+import { state as db, onChange, onSyncError, startSync, stopSync, addTx, updateTx, deleteTx, importData } from './store.js';
+import { exportCsv, exportXlsx, exportJson, readBackup } from './export.js';
 
 const compute = ym => calc(db, ym);
 function syncError(err) { console.error(err); toast('ซิงก์กับคลาวด์ไม่สำเร็จ: ' + (err.code || err.message)); }
@@ -25,7 +25,6 @@ function onMonthChange() {
   selDate = ymOf(t0) === view ? t0 : view + '-01';
   $('#monthLabel').textContent = monthTh(view);
   $('#prev').disabled = view <= START;
-  $('#monthIncome').value = (db.months[view] || {}).income || '';
   const dt = $('#date');
   dt.min = view + '-01'; dt.max = `${view}-${pad(daysIn(view))}`; dt.value = selDate;
   $('#dateTh').textContent = dateTh(selDate);
@@ -83,9 +82,6 @@ $('#date').addEventListener('change', e => {
   if (!e.target.value || ymOf(e.target.value) !== view) { e.target.value = selDate; return; }
   selDate = e.target.value; $('#dateTh').textContent = dateTh(selDate); render();
 });
-$('#monthIncome').addEventListener('input', e => {
-  setMonthIncome(view, Math.max(0, parseFloat(e.target.value) || 0));
-});
 $('#prev').onclick = () => { if (view > START) { view = addMonth(view, -1); onMonthChange(); } };
 $('#next').onclick = () => { view = addMonth(view, 1); onMonthChange(); };
 
@@ -97,7 +93,6 @@ function render() {
   bal.classList.toggle('neg', c.close < 0);
   $('#heroCap').textContent = 'เงินคงเหลือเดือน' + TH_M[+view.slice(5)-1];
   $('#balanceSub').textContent = c.close < 0 ? 'ใช้เกินรายรับ — ติดลบ' : 'ของ ' + monthTh(view) + ' (เริ่มนับใหม่จาก 0)';
-  $('#stSal').textContent = fmt(c.sal);
   $('#stIn').textContent = fmt(c.inc);
   $('#stOut').textContent = fmt(c.exp);
   renderMonths();
@@ -116,7 +111,7 @@ function renderMonths() {
     html += `<button class="mcard${m === view ? ' sel' : ''}" data-ym="${m}" aria-label="${monthTh(m)} คงเหลือ ${fmt(c.close)} บาท">` +
       `<div class="mn">${monthTh(m)}</div>` +
       `<div class="mb num${c.close < 0 ? ' neg' : ''}">${fmt(c.close)}</div>` +
-      `<div class="ml"><span>รับ</span><b class="i num">${fmt(c.sal + c.inc)}</b></div>` +
+      `<div class="ml"><span>รับ</span><b class="i num">${fmt(c.inc)}</b></div>` +
       `<div class="ml"><span>จ่าย</span><b class="o num">${fmt(c.exp)}</b></div></button>`;
     m = addMonth(m, 1);
   }
@@ -158,7 +153,6 @@ function buildItems(c) {
   const list = db.tx.filter(t => ymOf(t.date) === view)
     .sort(byTime);
   const items = []; let bal = 0;
-  if (c.sal > 0) { bal += c.sal; items.push({sal: true, date: view + '-01', type: 'in', amount: c.sal, note: 'รายได้ประจำเดือน', bal}); }
   list.forEach(t => { bal += t.type === 'in' ? t.amount : -t.amount; items.push(Object.assign({}, t, {bal})); });
   return items;                                   // เรียงจากเก่า → ใหม่
 }
@@ -182,7 +176,7 @@ function listHtml(slice, all) {
   const agg = {};
   all.forEach(it => {
     const g = agg[it.date] = agg[it.date] || {out: 0, inn: 0, bal: 0};
-    if (!it.sal) { if (it.type === 'in') g.inn += it.amount; else g.out += it.amount; }
+    if (it.type === 'in') g.inn += it.amount; else g.out += it.amount;
     g.bal = it.bal;
   });
   const groups = [];
@@ -208,7 +202,6 @@ function editHtml(t) {
 }
 
 function rowHtml(t) {
-  if (t.sal) return `<div class="tx sal"><div class="note">รายได้ประจำเดือน</div><div class="amt in num">+${fmt(t.amount)}</div><div></div></div>`;
   if (t.id === editingId) return editHtml(t);
   const sign = t.type === 'in' ? '+' : '−';
   const note = t.note ? esc(t.note) : (t.type === 'in' ? 'รายรับ' : 'ไม่ระบุรายละเอียด');
@@ -220,18 +213,18 @@ function rowHtml(t) {
 
 function tableHtml(slice, c) {
   const rows = slice.map(t => {
-    if (!t.sal && t.id === editingId) return `<tr><td class="editcell" colspan="7">${editHtml(t)}</td></tr>`;
-    const note = t.sal ? 'รายได้ประจำเดือน' : (t.note || (t.type === 'in' ? 'รายรับ' : 'ไม่ระบุรายละเอียด'));
-    const acts = t.sal ? '' : `<div class="acts" data-id="${t.id}"><button data-act="edit">แก้ไข</button><button data-act="del">ลบ</button></div>`;
+    if (t.id === editingId) return `<tr><td class="editcell" colspan="7">${editHtml(t)}</td></tr>`;
+    const note = t.note || (t.type === 'in' ? 'รายรับ' : 'ไม่ระบุรายละเอียด');
+    const acts = `<div class="acts" data-id="${t.id}"><button data-act="edit">แก้ไข</button><button data-act="del">ลบ</button></div>`;
     return `<tr><td class="num">${t.date}</td>` +
       `<td class="r in num">${t.type === 'in' ? fmt(t.amount) : ''}</td>` +
       `<td class="r out num">${t.type === 'out' ? fmt(t.amount) : ''}</td>` +
-      `<td class="note${t.note || t.sal ? '' : ' none'}">${esc(note)}</td>` +
+      `<td class="note${t.note ? '' : ' none'}">${esc(note)}</td>` +
       `<td class="r num">${fmt(t.bal)}</td><td class="ts num">${stamp(t.ts)}</td><td>${acts}</td></tr>`;
   }).join('');
   return '<div class="tablewrap"><table class="grid"><thead><tr><th>วันที่</th><th class="r">เงินเข้า</th><th class="r">เงินออก</th>' +
     '<th>รายละเอียด</th><th class="r">คงเหลือ</th><th>บันทึกเมื่อ</th><th></th></tr></thead>' +
-    `<tbody>${rows}</tbody><tfoot><tr><td>รวมเดือนนี้</td><td class="r num">${fmt(c.sal + c.inc)}</td><td class="r num">${fmt(c.exp)}</td>` +
+    `<tbody>${rows}</tbody><tfoot><tr><td>รวมเดือนนี้</td><td class="r num">${fmt(c.inc)}</td><td class="r num">${fmt(c.exp)}</td>` +
     `<td>เงินคงเหลือเดือนนี้</td><td class="r num">${fmt(c.close)}</td><td></td><td></td></tr></tfoot></table></div>`;
 }
 
@@ -280,8 +273,14 @@ $('#statement').addEventListener('click', e => {
 });
 
 /* ---------- export / import ---------- */
+$('#exportXlsx').onclick = async () => {
+  if (!db.tx.length) { toast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
+  toast('กำลังสร้างไฟล์ Excel…');
+  try { await exportXlsx(db); toast('ส่งออกไฟล์ .xlsx แล้ว'); }
+  catch (err) { console.error(err); toast('ส่งออกไม่สำเร็จ: ' + err.message); }
+};
 $('#exportCsv').onclick = () => {
-  if (!db.tx.length && !Object.keys(db.months).length) { toast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
+  if (!db.tx.length) { toast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
   exportCsv(db); toast('ส่งออกไฟล์ .csv แล้ว');
 };
 $('#export').onclick = () => exportJson(db);
@@ -302,14 +301,10 @@ function showScreen(name) {
   $('#login').hidden = name !== 'login';
   $('#app').hidden = name !== 'app';
 }
-function syncInputs() {
-  const mi = $('#monthIncome');
-  if (document.activeElement !== mi) mi.value = (db.months[view] || {}).income || '';
-}
 onChange(() => {
   if (!user || !db.ready) return;
   if (!started) { started = true; showScreen('app'); resetForm(); onMonthChange(); return; }
-  syncInputs(); render();
+  render();
 });
 
 const LOGIN_ERRORS = {
