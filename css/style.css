@@ -39,7 +39,7 @@ button,input{font:inherit; color:inherit}
 .hero .bal{font-size:clamp(40px,11vw,60px); font-weight:700; line-height:1.1; margin:2px 0 4px; letter-spacing:-.01em}
 .hero .bal.neg{color:#FFB48F}
 .hero .sub{font-size:14px; opacity:.8}
-.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,.22)}
+.stats{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,.22)}
 .stats div span{display:block; font-size:13px; opacity:.75}
 .stats div b{font-size:17px; font-weight:600}
 
@@ -106,7 +106,6 @@ input::placeholder{color:#94A5A2}
 .tx .acts{display:flex; gap:4px}
 .tx .acts button{border:0; background:transparent; color:var(--muted); cursor:pointer; padding:6px 8px; border-radius:8px; font-size:13px}
 .tx .acts button:hover{background:var(--field)}
-.tx.sal .note{font-weight:500}
 .txedit{display:grid; grid-template-columns:100px 1fr; gap:8px; padding:8px 0}
 .txedit .b{grid-column:1/-1; display:flex; gap:8px; justify-content:flex-end}
 .empty-state{color:var(--muted); text-align:center; padding:26px 8px}
