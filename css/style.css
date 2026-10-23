@@ -167,3 +167,9 @@ table.grid{border-collapse:collapse; width:100%; min-width:640px; font-size:14px
 .loading{text-align:center; color:var(--muted); padding:64px 0}
 @media (max-width:520px){ .who span{display:none} }
 
+
+/* ---------- สรุปรายจ่ายของวันที่เลือก ---------- */
+.daybox{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; padding:12px 14px; border-radius:12px; background:var(--field); border:1px solid var(--line)}
+.daybox .dl{display:block; font-size:14px; color:var(--muted)}
+.daybox .dx{display:block; font-size:13px; color:var(--in)}
+.daybox b{font-size:22px; font-weight:700; color:var(--out); white-space:nowrap}
