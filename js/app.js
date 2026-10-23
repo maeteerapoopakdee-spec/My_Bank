@@ -97,6 +97,7 @@ function render() {
   $('#stOut').textContent = fmt(c.exp);
   renderMonths();
   renderBars(c);
+  renderDay();
   renderStatement(c);
 }
 
@@ -138,11 +139,20 @@ function renderBars(c) {
       `style="height:${Math.max(2, v / max * 100)}%" title="${d} ${TH_M[+view.slice(5)-1]}: ${fmt(v)} บาท" aria-label="วันที่ ${d} จ่าย ${fmt(v)} บาท"></button>`;
   }).join('');
   $('#axis').innerHTML = perDay.map((_, i) => `<span>${(i + 1) % 5 === 1 || i + 1 === n ? i + 1 : ''}</span>`).join('');
-  // เฉลี่ยต่อวัน เฉพาะวันที่ผ่านมาแล้ว
-  let elapsed = n;
-  if (ymOf(t0) === view) elapsed = +t0.slice(8);
-  else if (view > ymOf(t0)) elapsed = 0;
-  $('#avg').textContent = elapsed ? `จ่ายเฉลี่ย ${fmt(c.exp / elapsed)} บาท/วัน (${elapsed} วัน)` : 'ยังไม่ถึงเดือนนี้';
+}
+
+// สรุปของวันที่เลือก (วันนี้ หรือวันที่จิ้มจากกราฟ/ช่องวันที่): รายจ่ายทั้งหมด + รายรับเพิ่มถ้ามี
+function renderDay() {
+  let out = 0, inn = 0;
+  db.tx.forEach(t => {
+    if (t.date !== selDate) return;
+    if (t.type === 'in') inn += t.amount; else out += t.amount;
+  });
+  const extra = inn > 0 ? `(มีรายรับเพิ่ม +${fmt(inn)})` : '';
+  $('#avg').textContent = `${dateTh(selDate)}: ` + (out ? `จ่ายทั้งหมด ${fmt(out)} บาท` : 'ยังไม่มีรายจ่าย') + (extra ? ' ' + extra : '');
+  $('#dayLabel').textContent = selDate === t0 ? 'รายจ่ายวันนี้ทั้งหมด' : `รายจ่ายทั้งหมดวัน${dateShort(selDate)}`;
+  $('#dayTotal').textContent = fmt(out) + ' บาท';
+  $('#dayExtra').textContent = extra;
 }
 $('#bars').addEventListener('click', e => {
   const b = e.target.closest('.bar'); if (!b) return;
