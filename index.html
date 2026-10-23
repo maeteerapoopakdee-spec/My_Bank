@@ -44,9 +44,8 @@
       <div class="bal num" id="balance">0</div>
       <div class="sub" id="balanceSub"></div>
       <div class="stats">
-        <div><span>รายได้ประจำเดือน</span><b class="num" id="stSal">0</b></div>
-        <div><span>รายรับอื่นๆ</span><b class="num" id="stIn">0</b></div>
-        <div><span>รายจ่ายรวม</span><b class="num" id="stOut">0</b></div>
+        <div><span>รายรับเดือนนี้</span><b class="num" id="stIn">0</b></div>
+        <div><span>รายจ่ายเดือนนี้</span><b class="num" id="stOut">0</b></div>
       </div>
     </section>
 
@@ -55,16 +54,6 @@
       <h2>สรุปแต่ละเดือน</h2>
       <div class="months" id="months"></div>
       <p class="hint">เลื่อนดูได้ · แตะที่เดือนเพื่อเปิดดูรายการของเดือนนั้น · แต่ละเดือนเริ่มนับจาก 0 ไม่ยกยอดต่อ</p>
-    </section>
-
-    <!-- รายได้ประจำเดือน -->
-    <section class="panel">
-      <h2>รายได้ประจำเดือน</h2>
-      <label class="field">
-        <span class="t">เงินเดือน / รายได้หลักของเดือนนี้ (บาท)</span>
-        <input type="number" id="monthIncome" inputmode="decimal" min="0" step="0.01" placeholder="เช่น 12000">
-      </label>
-      <p class="hint">นับเป็นรายรับของวันที่ 1 ของเดือน · ใส่ครั้งเดียวต่อเดือน แก้ไขได้ตลอด</p>
     </section>
 
     <!-- บันทึกรายวัน -->
@@ -84,7 +73,7 @@
         </label>
         <label class="field">
           <span class="t">รายละเอียด (ไม่ต้องใส่ก็ได้)</span>
-          <input type="text" id="inNote" placeholder="เช่น ได้เงินคืน, ขายของ">
+          <input type="text" id="inNote" placeholder="เช่น เงินเดือน, ได้เงินคืน">
         </label>
       </div>
       <p class="hint">ถ้าไม่มีรายรับ เว้นว่างไว้ = ไม่บวกเพิ่ม</p>
@@ -121,7 +110,8 @@
     <footer class="foot">
       ข้อมูลซิงก์กับบัญชี Google ของคุณอัตโนมัติ · เปิดจากเครื่องไหนก็เห็นเหมือนกัน
       <div class="btns">
-        <button class="btn small line" id="exportCsv">ส่งออกเป็น Excel (.csv)</button>
+        <button class="btn small line" id="exportXlsx">ส่งออก Excel (.xlsx มีสี)</button>
+      <button class="btn small line" id="exportCsv">CSV (ไม่มีสี)</button>
         <button class="btn small line" id="export">สำรอง (.json)</button>
         <button class="btn small line" id="importBtn">นำเข้าจาก .json</button>
         <input type="file" id="importFile" accept="application/json" hidden>
