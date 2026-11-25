@@ -173,3 +173,16 @@ table.grid{border-collapse:collapse; width:100%; min-width:640px; font-size:14px
 .daybox .dl{display:block; font-size:14px; color:var(--muted)}
 .daybox .dx{display:block; font-size:13px; color:var(--in)}
 .daybox b{font-size:22px; font-weight:700; color:var(--out); white-space:nowrap}
+
+* ---------- ส่งออกข้อมูล (v1.2) ---------- */
+.panel h2.bigh2{font-size:20px; font-weight:700; margin:0 0 6px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 12px}
+.chip{border:1px solid var(--line); background:var(--field); color:var(--ink); border-radius:999px; padding:8px 14px; min-height:38px; font-size:14px; cursor:pointer}
+.chip.on{background:var(--brand); color:var(--brand-ink); border-color:var(--brand); font-weight:600}
+.exquick{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
+.exquick .info{font-size:13px; color:var(--muted); margin-left:auto}
+.exbtns{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.exbtns .btn.primary{margin-top:0}
+.exbtns .btn.line{width:100%}
+@media (max-width:420px){ .exbtns{grid-template-columns:1fr} }
+
