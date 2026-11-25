@@ -1,6 +1,5 @@
 // ส่งออก Excel (.xlsx สีตามวัน) / CSV และสำรอง-นำเข้า JSON
-import { START } from './config.js';
-import { ymOf, addMonth, monthTh, todayStr, pad } from './utils.js';
+import { ymOf, monthTh, todayStr, pad, daysIn } from './utils.js';
 import { compute, byTime } from './calc.js';
 
 const r2 = n => Math.round(n * 100) / 100;
@@ -24,31 +23,62 @@ const timeOf = ts => {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
-// จัดข้อมูลเป็นบล็อกรายเดือน ใช้ร่วมกันทั้ง CSV และ xlsx
-function buildBlocks(db) {
-  let last = START;
-  db.tx.forEach(t => { if (ymOf(t.date) > last) last = ymOf(t.date); });
+// วันที่ทั้งหมดของเดือนที่จะแสดง: เดือนที่ผ่านมาแล้ว = ครบทุกวัน, เดือนปัจจุบัน = ถึงวันนี้
+// (ถ้ามีรายการลงวันล่วงหน้า ให้แสดงถึงวันนั้นด้วย)
+function daysOf(m, list) {
+  let limit = todayStr();
+  list.forEach(t => { if (t.date > limit) limit = t.date; });
+  const days = [];
+  for (let d = 1; d <= daysIn(m); d++) {
+    const date = `${m}-${pad(d)}`;
+    if (date > limit) break;
+    days.push(date);
+  }
+  return days;
+}
+
+// จัดข้อมูลเป็นบล็อกรายเดือน (เฉพาะเดือนที่เลือก) ใช้ร่วมกันทั้ง CSV และ xlsx
+function buildBlocks(db, months) {
   const blocks = [];
-  for (let m = START; m <= last; m = addMonth(m, 1)) {
+  [...new Set(months)].sort().forEach(m => {
     const list = db.tx.filter(t => ymOf(t.date) === m).sort(byTime);
-    if (!list.length) continue;
+    const days = daysOf(m, list);
+    if (!days.length) return;                          // เดือนในอนาคตที่ยังไม่ถึง
+    const byDate = {};
+    list.forEach(t => (byDate[t.date] = byDate[t.date] || []).push(t));
+
     const c = compute(db, m);
     let bal = 0;
-    const rows = list.map(t => {
-      bal += t.type === 'in' ? t.amount : -t.amount;
-      return {
-        date: t.date, time: timeOf(t.ts),
-        inn: t.type === 'in' ? r2(t.amount) : '', out: t.type === 'out' ? r2(t.amount) : '',
-        note: t.note || (t.type === 'in' ? 'รายรับ' : 'ไม่ระบุรายละเอียด'), bal: r2(bal),
-      };
+    const rows = [];
+    days.forEach(date => {
+      const items = byDate[date];
+      if (!items) {                                    // วันที่ไม่มีรายการ → แถว 0 บาท
+        rows.push({date, time: '', inn: '', out: 0, note: 'ไม่มีรายการ', bal: r2(bal), empty: true});
+        return;
+      }
+      items.forEach(t => {
+        bal += t.type === 'in' ? t.amount : -t.amount;
+        rows.push({
+          date, time: timeOf(t.ts),
+          inn: t.type === 'in' ? r2(t.amount) : '', out: t.type === 'out' ? r2(t.amount) : '',
+          note: t.note || (t.type === 'in' ? 'รายรับ' : 'ไม่ระบุรายละเอียด'), bal: r2(bal),
+        });
+      });
     });
     // รวมรายจ่ายของแต่ละวัน แล้วใส่ที่แถวสุดท้ายของวันนั้น (คอลัมน์ G)
     const daySum = {};
     rows.forEach(r => { daySum[r.date] = r2((daySum[r.date] || 0) + (r.out || 0)); });
     rows.forEach((r, i) => { r.dayTotal = (i === rows.length - 1 || rows[i + 1].date !== r.date) ? daySum[r.date] : ''; });
     blocks.push({title: monthTh(m), rows, total: ['รวม ' + monthTh(m), '', r2(c.inc), r2(c.exp), 'เงินคงเหลือเดือนนี้', r2(c.close), '']});
-  }
+  });
   return blocks;
+}
+
+// ชื่อไฟล์: เดือนเดียว = ชื่อเดือน, หลายเดือน = จำนวนเดือน
+function fileName(months, ext) {
+  const ms = [...new Set(months)].sort();
+  const tag = ms.length === 1 ? monthTh(ms[0]).replace(' ', '-') : `${ms.length}เดือน-${todayStr()}`;
+  return `รายรับรายจ่าย-${tag}.${ext}`;
 }
 
 function download(blob, name) {
@@ -63,15 +93,18 @@ function csvCell(v) {
   if (typeof v === 'string' && /^[=+\-@]/.test(s)) s = "'" + s;       // กันสูตรใน Excel
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
-export function exportCsv(db) {
+export function exportCsv(db, months) {
+  const blocks = buildBlocks(db, months);
+  if (!blocks.length) return 0;
   const rows = [];
-  buildBlocks(db).forEach(b => {
+  blocks.forEach(b => {
     rows.push([b.title], HEAD);
     b.rows.forEach(r => rows.push([r.date, r.time, r.inn, r.out, r.note, r.bal, r.dayTotal]));
     rows.push(b.total, []);
   });
   const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');   // BOM ให้ Excel อ่านภาษาไทยถูก
-  download(new Blob([csv], {type: 'text/csv;charset=utf-8'}), `รายรับรายจ่าย-${todayStr()}.csv`);
+  download(new Blob([csv], {type: 'text/csv;charset=utf-8'}), fileName(months, 'csv'));
+  return blocks.length;
 }
 
 /* ---------- Excel (.xlsx สีตามวัน) ---------- */
@@ -87,7 +120,9 @@ async function loadExcelJS() {
   return window.ExcelJS;
 }
 
-export async function exportXlsx(db) {
+export async function exportXlsx(db, months) {
+  const blocks = buildBlocks(db, months);
+  if (!blocks.length) return 0;
   const ExcelJS = await loadExcelJS();
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('รายรับรายจ่าย');
@@ -105,14 +140,15 @@ export async function exportXlsx(db) {
   legend.eachCell(cell => { const d = DAY_COLORS[cell.col - 1]; paintCell(cell, d.bg, d.fg, true); cell.alignment = {horizontal: 'center'}; });
   ws.addRow([]);
 
-  buildBlocks(db).forEach(b => {
+  blocks.forEach(b => {
     ws.addRow([b.title]).font = {bold: true, size: 14};
     paint(ws.addRow(HEAD), 'D9D9D9', '212121', true);
     b.rows.forEach(r => {
       const [y, m, d] = r.date.split('-').map(Number);
-      const row = ws.addRow([new Date(Date.UTC(y, m - 1, d)), r.time, r.inn || null, r.out || null, r.note, r.bal, r.dayTotal === '' ? null : r.dayTotal]);
+      const row = ws.addRow([new Date(Date.UTC(y, m - 1, d)), r.time, r.inn === '' ? null : r.inn, r.out === '' ? null : r.out, r.note, r.bal, r.dayTotal === '' ? null : r.dayTotal]);
       const dc = DAY_COLORS[new Date(y, m - 1, d).getDay()];
       paint(row, dc.bg, dc.fg, false);
+      if (r.empty) row.eachCell({includeEmpty: true}, cell => { cell.font = {...cell.font, italic: true}; });   // วันที่ไม่มีรายการ: ตัวเอียง
       row.getCell(1).numFmt = 'dd/mm/yyyy';
       [3, 4, 6, 7].forEach(i => { row.getCell(i).numFmt = '#,##0.00'; });
       [1, 2].forEach(i => { row.getCell(i).alignment = {horizontal: 'center'}; });
@@ -124,7 +160,8 @@ export async function exportXlsx(db) {
   });
 
   const buf = await wb.xlsx.writeBuffer();
-  download(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `รายรับรายจ่าย-${todayStr()}.xlsx`);
+  download(new Blob([buf], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName(months, 'xlsx'));
+  return blocks.length;
 }
 
 /* ---------- สำรอง / นำเข้า JSON ---------- */
