@@ -296,9 +296,15 @@ function exportMonthList() {
   return list;
 }
 function renderExport() {
+  const sel = [...exportSel].sort();
   $('#exportMonths').innerHTML = exportMonthList().map(m =>
-    `<button type="button" class="chip${exportSel.has(m) ? ' on' : ''}" data-ym="${m}" aria-pressed="${exportSel.has(m)}">${monthTh(m)}</button>`).join('');
-  $('#exportInfo').textContent = exportSel.size ? `เลือกแล้ว ${exportSel.size} เดือน` : 'ยังไม่ได้เลือกเดือน';
+    `<button type="button" class="chip${exportSel.has(m) ? ' on' : ''}" data-ym="${m}" aria-pressed="${exportSel.has(m)}" title="กดเพื่อเลือก/ยกเลิกเดือนนี้">${monthTh(m)}</button>`).join('');
+  const info = $('#exportInfo');
+  info.textContent = sel.length
+    ? `จะส่งออก: ${sel.length <= 3 ? sel.map(monthTh).join(', ') : sel.length + ' เดือน'}`
+    : 'ยังไม่ได้เลือกเดือน — กดที่ปุ่มเดือนด้านบน';
+  info.classList.toggle('none', !sel.length);
+  $('#exportXlsx').disabled = $('#exportCsv').disabled = !sel.length;
 }
 $('#exportMonths').addEventListener('click', e => {
   const b = e.target.closest('.chip'); if (!b) return;
