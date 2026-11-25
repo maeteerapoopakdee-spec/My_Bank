@@ -1,5 +1,5 @@
 // ตัวควบคุมหน้าเว็บ: วาดหน้าจอ, รับการกดปุ่ม, เชื่อมกับ auth/store
-import { START, PAGE } from './config.js';
+import { START, PAGE, VERSION } from './config.js';
 import { $, pad, ymOf, esc, fmt, todayStr, addMonth, daysIn, monthTh, dateTh, dateShort, stamp, TH_M, toast } from './utils.js';
 import { compute as calc, byTime } from './calc.js';
 import { configured } from './firebase.js';
@@ -16,6 +16,8 @@ const t0 = todayStr();
 let view = ymOf(t0) < START ? START : ymOf(t0);
 let selDate = ymOf(t0) === view ? t0 : view + '-01';
 let editingId = null;
+let exportSel = new Set();       // เดือนที่เลือกไว้ส่งออก
+let exportCustom = false;        // true = ผู้ใช้เลือกเองแล้ว (ไม่ต้องตามเดือนที่เปิดอยู่)
 let page = 1;
 let mode = 'list';
 try { if (localStorage.getItem('moneybook.mode') === 'table') mode = 'table'; } catch (e) {}
@@ -29,6 +31,7 @@ function onMonthChange() {
   dt.min = view + '-01'; dt.max = `${view}-${pad(daysIn(view))}`; dt.value = selDate;
   $('#dateTh').textContent = dateTh(selDate);
   editingId = null; page = 1;
+  if (!exportCustom) exportSel = new Set([view]);
   render();
 }
 
@@ -99,6 +102,7 @@ function render() {
   renderBars(c);
   renderDay();
   renderStatement(c);
+  renderExport();
 }
 
 function renderMonths() {
@@ -283,15 +287,45 @@ $('#statement').addEventListener('click', e => {
 });
 
 /* ---------- export / import ---------- */
+function exportMonthList() {
+  let last = ymOf(t0) < START ? START : ymOf(t0);
+  db.tx.forEach(t => { if (ymOf(t.date) > last) last = ymOf(t.date); });
+  if (view > last) last = view;
+  const list = [];
+  for (let m = START; m <= last; m = addMonth(m, 1)) list.push(m);
+  return list;
+}
+function renderExport() {
+  $('#exportMonths').innerHTML = exportMonthList().map(m =>
+    `<button type="button" class="chip${exportSel.has(m) ? ' on' : ''}" data-ym="${m}" aria-pressed="${exportSel.has(m)}">${monthTh(m)}</button>`).join('');
+  $('#exportInfo').textContent = exportSel.size ? `เลือกแล้ว ${exportSel.size} เดือน` : 'ยังไม่ได้เลือกเดือน';
+}
+$('#exportMonths').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  exportCustom = true;
+  if (exportSel.has(b.dataset.ym)) exportSel.delete(b.dataset.ym); else exportSel.add(b.dataset.ym);
+  renderExport();
+});
+$('#selThis').onclick = () => { exportCustom = false; exportSel = new Set([view]); renderExport(); };
+$('#selAll').onclick = () => { exportCustom = true; exportSel = new Set(exportMonthList()); renderExport(); };
+const pickedMonths = () => [...exportSel].sort();
+$('#ver').textContent = 'v' + VERSION;
 $('#exportXlsx').onclick = async () => {
+  const months = pickedMonths();
+  if (!months.length) { toast('เลือกเดือนที่ต้องการส่งออกก่อน'); return; }
   if (!db.tx.length) { toast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
   toast('กำลังสร้างไฟล์ Excel…');
-  try { await exportXlsx(db); toast('ส่งออกไฟล์ .xlsx แล้ว'); }
-  catch (err) { console.error(err); toast('ส่งออกไม่สำเร็จ: ' + err.message); }
+  try {
+    const n = await exportXlsx(db, months);
+    toast(n ? `ส่งออกไฟล์ .xlsx แล้ว (${n} เดือน)` : 'เดือนที่เลือกยังไม่มีข้อมูลให้ส่งออก');
+  } catch (err) { console.error(err); toast('ส่งออกไม่สำเร็จ: ' + err.message); }
 };
 $('#exportCsv').onclick = () => {
+  const months = pickedMonths();
+  if (!months.length) { toast('เลือกเดือนที่ต้องการส่งออกก่อน'); return; }
   if (!db.tx.length) { toast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
-  exportCsv(db); toast('ส่งออกไฟล์ .csv แล้ว');
+  const n = exportCsv(db, months);
+  toast(n ? `ส่งออกไฟล์ .csv แล้ว (${n} เดือน)` : 'เดือนที่เลือกยังไม่มีข้อมูลให้ส่งออก');
 };
 $('#export').onclick = () => exportJson(db);
 $('#importBtn').onclick = () => $('#importFile').click();
