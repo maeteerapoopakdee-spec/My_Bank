@@ -174,15 +174,26 @@ table.grid{border-collapse:collapse; width:100%; min-width:640px; font-size:14px
 .daybox .dx{display:block; font-size:13px; color:var(--in)}
 .daybox b{font-size:22px; font-weight:700; color:var(--out); white-space:nowrap}
 
-* ---------- ส่งออกข้อมูล (v1.2) ---------- */
+/* ---------- ส่งออกข้อมูล (v1.2) ---------- */
 .panel h2.bigh2{font-size:20px; font-weight:700; margin:0 0 6px}
 .chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 12px}
 .chip{border:1px solid var(--line); background:var(--field); color:var(--ink); border-radius:999px; padding:8px 14px; min-height:38px; font-size:14px; cursor:pointer}
 .chip.on{background:var(--brand); color:var(--brand-ink); border-color:var(--brand); font-weight:600}
 .exquick{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
-.exquick .info{font-size:13px; color:var(--muted); margin-left:auto}
 .exbtns{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 .exbtns .btn.primary{margin-top:0}
 .exbtns .btn.line{width:100%}
 @media (max-width:420px){ .exbtns{grid-template-columns:1fr} }
 
+/* ---------- ให้เห็นชัดว่าเลือกเดือนไหนอยู่ (v1.2.1) ---------- */
+:root{--sel:#0F4C4A; --sel-ink:#FFFFFF}
+@media (prefers-color-scheme: dark){ :root{--sel:#7FE0C0; --sel-ink:#06201C} }
+.chip{transition:background .15s, border-color .15s}
+.chip:hover{border-color:var(--sel); background:var(--surface)}
+.chip.on{background:var(--sel); color:var(--sel-ink); border-color:var(--sel); font-weight:600}
+.chip.on:hover{background:var(--sel)}
+.chip.on::before{content:"\2713\00a0"}
+.sel-summary{font-size:15px; font-weight:600; margin:0 0 12px; min-height:1.5em}
+.sel-summary.none{color:var(--out)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+@media (prefers-reduced-motion: reduce){ .chip{transition:none} }
