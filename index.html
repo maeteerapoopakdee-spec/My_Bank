@@ -6,7 +6,7 @@
 <title>สมุดรายรับรายจ่าย</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2 ?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -111,13 +111,27 @@
       <div id="statement"></div>
       <nav class="pager" id="pager" aria-label="เลือกหน้า"></nav>
     </section>
+    
+  <!-- ส่งออกข้อมูล -->
+    <section class="panel" aria-label="ส่งออกข้อมูล">
+      <h2 class="bigh2">ส่งออกข้อมูล</h2>
+      <p class="hint" style="margin-top:0">เลือกเดือนที่ต้องการ (จิ้มเลือกได้หลายเดือน) · วันที่ไม่มีรายการจะแสดงเป็น 0 บาท</p>
+      <div class="chips" id="exportMonths" role="group" aria-label="เลือกเดือนที่จะส่งออก"></div>
+      <div class="exquick">
+        <button type="button" class="btn small line" id="selThis">เดือนที่เปิดอยู่</button>
+        <button type="button" class="btn small line" id="selAll">ทุกเดือน</button>
+        <span class="info" id="exportInfo"></span>
+      </div>
+      <div class="exbtns">
+        <button type="button" class="btn primary" id="exportXlsx">ส่งออก Excel (.xlsx มีสี)</button>
+        <button type="button" class="btn line" id="exportCsv">CSV (ไม่มีสี)</button>
+      </div>
+    </section>
 
     <footer class="foot">
-      ข้อมูลซิงก์กับบัญชี Google ของคุณอัตโนมัติ · เปิดจากเครื่องไหนก็เห็นเหมือนกัน
+      ข้อมูลซิงก์กับบัญชี Google ของคุณอัตโนมัติ · เปิดจากเครื่องไหนก็เห็นเหมือนกัน · <span id="ver"></span>
       <div class="btns">
-        <button class="btn small line" id="exportXlsx">ส่งออก Excel (.xlsx มีสี)</button>
-      <button class="btn small line" id="exportCsv">CSV (ไม่มีสี)</button>
-        <button class="btn small line" id="export">สำรอง (.json)</button>
+        <button class="btn small line" id="export">สำรองทั้งหมด (.json)</button>
         <button class="btn small line" id="importBtn">นำเข้าจาก .json</button>
         <input type="file" id="importFile" accept="application/json" hidden>
       </div>
